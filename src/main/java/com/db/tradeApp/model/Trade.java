@@ -1,6 +1,8 @@
 package com.db.tradeApp.model;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.time.LocalDate;
@@ -8,8 +10,13 @@ import java.time.LocalDate;
 @Table(name = "Trades")
 public class Trade {
 
-    @Id
-    private String tradeId;
+	@Id
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE
+    )
+    private long id;
+    
+	private String tradeId;
 
     private int version;
 
@@ -22,6 +29,14 @@ public class Trade {
     private LocalDate createdDate;
 
     private String expiredFlag;
+    
+    public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
 
     public String getTradeId() {
         return tradeId;

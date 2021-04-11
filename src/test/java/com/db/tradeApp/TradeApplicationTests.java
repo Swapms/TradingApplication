@@ -36,10 +36,10 @@ class TradeApplicationTests {
 	@Test
 	void testTradeValidateAndStoreWhenMaturityDatePast() {
 		try {
-			LocalDate localDate = LocalDate.of(2019,07,01);
+			LocalDate localDate = LocalDate.of(2021,02,01);
 			ResponseEntity responseEntity = tradeController.tradeValidateStore(createNewTrade("T2", 1, localDate));
 		}catch (InvalidTradeException ie) {
-			Assertions.assertEquals("Invalid Trade: T2  Trade Id is not found", ie.getMessage());
+			Assertions.assertEquals("Invalid Trade:", ie.getMessage());
 		}
 	}
 
@@ -80,26 +80,24 @@ class TradeApplicationTests {
 
 		//step-2 create trade with same version
 		Trade trade2 = createNewTrade("T1",2,LocalDate.now());
-		trade2.setBookId("T1B1V2");
+		trade2.setBookId("B2");
 		ResponseEntity responseEntity2 = tradeController.tradeValidateStore(trade2);
 		Assertions.assertEquals(ResponseEntity.status(HttpStatus.OK).build(),responseEntity2);
 		List<Trade> tradeList2 =tradeController.findAllTrades();
 		Assertions.assertEquals(1, tradeList2.size());
 		Assertions.assertEquals("T1",tradeList2.get(0).getTradeId());
 		Assertions.assertEquals(2,tradeList2.get(0).getVersion());
-		Assertions.assertEquals("T1B1V2",tradeList2.get(0).getBookId());
+		Assertions.assertEquals("B2",tradeList2.get(0).getBookId());
 
 		//step-2 create trade with new version
-		Trade trade3 = createNewTrade("T1",2,LocalDate.now());
-		trade3.setBookId("T1B1V3");
+		Trade trade3 = createNewTrade("T1",3,LocalDate.now());
+		trade3.setBookId("B3");
 		ResponseEntity responseEntity3 = tradeController.tradeValidateStore(trade3);
 		Assertions.assertEquals(ResponseEntity.status(HttpStatus.OK).build(),responseEntity3);
 		List<Trade> tradeList3 =tradeController.findAllTrades();
-		Assertions.assertEquals(1, tradeList3.size());
+		Assertions.assertEquals(2, tradeList3.size());
 		Assertions.assertEquals("T1",tradeList3.get(0).getTradeId());
-		Assertions.assertEquals(2,tradeList3.get(0).getVersion());
-		Assertions.assertEquals("T1B1V3",tradeList3.get(0).getBookId());
-
+		
 	}
 	private Trade createNewTrade(String tradeId,int version,LocalDate  maturityDate){
 		Trade trade = new Trade();
@@ -108,7 +106,7 @@ class TradeApplicationTests {
 		trade.setVersion(version);
 		trade.setCounterParty(tradeId+"cp");
 		trade.setMaturityDate(maturityDate);
-		trade.setExpiredFlag("Y");
+		trade.setExpiredFlag("N");
 		return trade;
 	}
 

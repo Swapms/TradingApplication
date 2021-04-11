@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.db.tradeApp.exception.InvalidTradeException;
 import com.db.tradeApp.model.Trade;
 import com.db.tradeApp.repo.TradeRepository;
 
@@ -21,60 +22,65 @@ public class TradeService {
     @Autowired
     TradeRepository tradeRepository;
 
+    public Trade UpdateTradeWithSameVersion(Trade trade){
+    	 if(validateMaturityDate(trade)) {
+    		 Trade ExistingTrade = tradeRepository.findByTradeIdAndVersion(trade.getTradeId(),trade.getVersion());
+    		 if(ExistingTrade == null)
+    			 return null;
+    		 else {
+    			 trade.setId(ExistingTrade.getId());
+    			 return trade;
+    		 }
+    	 }else {
+        	 throw new InvalidTradeException(trade.getTradeId()+" Error : Invalid Maturity Date");
+         }
+    }
     public boolean isValid(Trade trade){
         if(validateMaturityDate(trade)) {
-            Optional<Trade> exsitingTrade = tradeRepository.findById(trade.getTradeId());
-             if (exsitingTrade.isPresent()) {
-                 return validateVersion(trade, exsitingTrade.get());
-             }else{
+        	List<Trade> trades = tradeRepository.findByTradeIdOrderByVersionDesc(trade.getTradeId());
+            if(trades != null && !trades.isEmpty()) {
+                 return validateVersion(trade, trades.get(0));
+            }else{
                  return true;
              }
+         }else {
+        	 throw new InvalidTradeException(trade.getTradeId()+" Error : Invalid Maturity Date");
          }
-         return false;
     }
 
     private boolean validateVersion(Trade trade,Trade oldTrade) {
-        //validation 1  During transmission if the
         // lower version is being received by the store it will reject the trade and throw an exception.
-        if(trade.getVersion() >= oldTrade.getVersion()){
+        if(trade.getVersion() > oldTrade.getVersion()){
             return true;
+        }else {
+        	 throw new InvalidTradeException(trade.getTradeId()+" Error : Invalid Version specified, Highest version is :"+oldTrade.getVersion());
         }
-        return false;
     }
-
-    //2.	Store should not allow the trade which has less maturity date then today date
+    //Store should not allow the trade which has less maturity date then today date
     private boolean validateMaturityDate(Trade trade){
         return trade.getMaturityDate().isBefore(LocalDate.now())  ? false:true;
     }
-
+    
+    //to save the trade
     public void  persist(Trade trade){
-       // tradeDao.save(trade);
         trade.setCreatedDate(LocalDate.now());
         tradeRepository.save(trade);
     }
 
     public List<Trade> findAll(){
        return  tradeRepository.findAll();
-        //return tradeDao.findAll();
     }
-
+/*
+ * To update the flag as per maturity date
+ * 
+ */
     public void updateExpiryFlagOfTrade(){
-      /* tradeDao.tradeMap.forEach(
-               (k,v) -> {
-                   if(!validateMaturityDate(v)){
-                       v.setExpiredFlag("N");
-                       log.info("Trade which needs to updated {}",v);
-                   }
-               }
-       );*/
         tradeRepository.findAll().stream().forEach(t -> {
                 if (!validateMaturityDate(t)) {
                     t.setExpiredFlag("Y");
-                    log.info("Trade which needs to updated {}", t);
+                    log.info("Trade which needs to updated ", t);
                     tradeRepository.save(t);
                 }
             });
-        }
-
-
+    }
 }
