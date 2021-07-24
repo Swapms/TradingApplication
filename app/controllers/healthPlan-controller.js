@@ -3,8 +3,9 @@ const pool = require('../config/config.js');
 const healthRoute = require('../routes/health-route.js');
 const healthPlan= require('../models/HealthPlan.js');
 const { json } = require('body-parser');
-const agefun = require('./helpers/index.js').getAge;
-const BMIfun= require('./helpers/index.js').getBMI;
+const { agefun, BMIfun } = require("./helpers/index");
+//const agefun = require('./helpers/index.js').getAge;
+//const BMIfun= require('./helpers/index.js').getBMI;
 
 // Create and Save a new user
 exports.getHealthPlans = (req, res) => {
@@ -33,8 +34,9 @@ exports.getHealthPlans = (req, res) => {
       connection.query(query, (err, rows) => {
          // connection.release(); // return the connection to pool
           if(err) throw err;
-          var result = [];
-          var testTypes = [];
+          let result = [];
+         // let finalResult = [];
+          let testTypes = [];
           const selectQueryMain = 'SELECT count(h.checkup_category) as count, h.checkup_category '+
           ' FROM demo.healthplan h '+
           ' INNER JOIN `demo`.`recommendedandcustomizedplan` r'+
@@ -45,21 +47,38 @@ exports.getHealthPlans = (req, res) => {
             jsondata = JSON.parse(JSON.stringify(rowsmain));  
           let startPtr = 0;
           let endPtr = 0;
-          let Recommendedcount = 0;
+          let recommendedcount = 0;
+          let selfAddedcount = 0;
             jsondata.forEach(function(healthplan) {
               endPtr = endPtr + healthplan.count;
             for (let i = startPtr; i <endPtr; i++) {
               testTypes.push(rows[i]);
             }
-            Recommendedcount = Recommendedcount + healthplan.count;
+            recommendedcount = recommendedcount + healthplan.count;
             result.push({testName: healthplan.checkup_category, testTypes:testTypes});
             startPtr = healthplan.count;
             testTypes = [];
           });
-          result.push({Recommendedcount:Recommendedcount});
-          console.log(JSON.parse(JSON.stringify(result)))
-          res.status(200).json(JSON.parse(JSON.stringify(result)))
-          
+        
+          //for self added plans
+          // let selfAddedArr = getSelfAddedCheckups(user_id);
+            const selectQuerySelfAdded = 'SELECT additional_fields->>"$.checkup_name" checkup_name '+
+                          ' FROM `recommendedandcustomizedplan` WHERE `user_id` = ? AND additional_fields->>"$.plan_type" = ? ';
+    
+            let query = mysql.format(selectQuerySelfAdded,[user_id,'selfadded']);
+            console.log(query);
+            connection.query(query, (err, rows) => {
+                connection.release(); // return the connection to pool
+                if(err) throw err;
+                let tempResult = [];
+                selfAddedcount = rows.length;
+                tempResult.push({test_name :'SelfAdded',testTypes:rows})
+          //  finalResult.push({Recommendedcount:recommendedcount,SelfAddedcount:selfAddedcount}); 
+       //     finalResult.push({Recommended:result,Recommendedcount:recommendedcount,SelfAddedcount:selfAddedcount,SelfAdded:{test_name :'SelfAdded',testTypes:rows}})           
+          //  finalResult.push({SelfAdded:tempResult});
+          //  console.log(JSON.parse(JSON.stringify(finalResult)))
+            res.status(200).json(JSON.parse(JSON.stringify({Recommended:result,Recommendedcount:recommendedcount,SelfAddedcount:selfAddedcount,SelfAdded:tempResult})))
+          });
         });
       });
     });
@@ -95,7 +114,6 @@ exports.getHealthPlans = (req, res) => {
           
           generatePlansForDoctorCheckup(user_id,age,gender,exisiting_conditions,family_history);
           
-          console.log("exisiting_conditions "+ exisiting_conditions);
          // res.status(200).json({elems:rows[0]})
       });
   });
@@ -394,3 +412,23 @@ exports.getHealthPlans = (req, res) => {
   });
 }
 
+/*function getSelfAddedCheckups(user_id){
+  pool.getConnection((err, connection) => {
+    if(err) throw err;
+    console.log('connected as id ' + connection.threadId);
+    const selectQuerySelfAdded = 'SELECT additional_fields->>"$.checkup_name" checkup_name '+
+                        ' FROM `recommendedandcustomizedplan` WHERE `user_id` = ? AND additional_fields->>"$.plan_type" = ? ';
+  
+    let query = mysql.format(selectQuerySelfAdded,[user_id,'selfadded']);
+    console.log(query);
+    connection.query(query, (err, rows) => {
+        connection.release(); // return the connection to pool
+        if(err) throw err;
+        let result = [];
+        console.log(rows)
+        result.push({plan_type :'SelfAdded',testName :'Self'})
+        result.push({testTypes:rows});
+        return result;
+    });
+  });
+}*/

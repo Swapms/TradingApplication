@@ -2,7 +2,8 @@ const mysql = require('mysql');
 const pool = require('../config/config.js')
 const health_details = require('../models/Health-Details.js');
 const user_details = require('../models/User.js');
-const createHealthPlans = require('./healthPlan-controller.js').createHealthPlans;
+const healthPlanController = require('./healthPlan-controller.js');
+const { createTokens, validateToken } = require("./helpers/index");
 // Create and Save a new user
 exports.create = (req, res) => {
     // Validate request
@@ -35,7 +36,7 @@ exports.create = (req, res) => {
     res.status(200).send(user);
   };
 
-  exports.findAll = (req, res) => {
+  exports.findAll =  (req, res,next) => {
   /*  connection.query(
       'SELECT * FROM `users` WHERE `name` = ? AND `age` > ?',
       ['Page', 45],
@@ -43,24 +44,25 @@ exports.create = (req, res) => {
         console.log(results);
       }
     );*/
+  
 
     res.status(200).send("success");
   };
   //Add Member
-  exports.addMember = (req, res) => {
-    
+  exports.addMember = (req, res,next) => {
+  
     user_details.user_id = req.body.user_id;
     user_details.name = req.body.name;
     user_details.relation = req.body.relation;
-    user_details.phone_number = req.body.phone_number;
+    //user_details.phone_number = req.body.phone_number;
     user_details.whatsApp_number = req.body.whatsApp_number;
     
    // console.log(JSON.stringify(health_details.excercise))
    //var user_attributes_Json = JSON.stringify(req.body);
    let updateQuery = 'UPDATE user_details'+
-   ' SET name = ?,phone_number=?,relation=?,user_attributes = JSON_SET(user_attributes,"$.whatsApp_number",?)'+
+   ' SET name = ?,relation=?,user_attributes = JSON_SET(user_attributes,"$.whatsApp_number",?)'+
    ' WHERE user_id=?';
-   let query = mysql.format(updateQuery,[user_details.name,user_details.phone_number,
+   let query = mysql.format(updateQuery,[user_details.name,
                             user_details.relation,user_details.whatsApp_number,user_details.user_id]);  
    console.log(query);
    pool.query(query,(err, res) => {
@@ -112,9 +114,9 @@ exports.create = (req, res) => {
             return;
         }
         // rows added
-        console.log("row UPDATED")
+        console.log("User Details updated")
         //call health plan algo
-        createHealthPlans(health_details.user_id);
+        healthPlanController.createHealthPlans(health_details.user_id);
    });
     res.status(200).send("Data updated successfully");
   };
