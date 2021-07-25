@@ -73,7 +73,7 @@ exports.login = (req, res) => {
     let insertQuery = 'INSERT INTO ?? (??,??,??,??) VALUES (?,?,now(),now())';
     let query = mysql.format(insertQuery,["authentication","username","password","createdAt","updatedAt",user.username,hash]);
     console.log(query)
-    pool.query(query,(err, res) => {
+    pool.query(query,(err, resp) => {
        
         if(err) {
             console.error(err);
@@ -88,7 +88,7 @@ exports.login = (req, res) => {
         let insertQuery = 'INSERT INTO ?? (??,??,??) VALUES (?,?,\'{}\')';
         let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",res.insertId,user.username,]);
         console.log(query)
-        pool.query(query,(err, res) => {
+        pool.query(query,(err, resp) => {
             if(err) {
               console.error(err);
               res.status(500).send({
