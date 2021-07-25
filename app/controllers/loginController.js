@@ -34,7 +34,7 @@ exports.login = (req, res) => {
                     .status(400)
                     .json({ error: "Wrong Username and Password Combination!" });
                 } else {
-                userdata = JSON.parse(JSON.stringify(results));  
+                userdata = JSON.parse(JSON.stringify(results[0]));  
                 const accessToken = createTokens(userdata);
                
                 /*res.cookie("access-token", accessToken, {
@@ -44,6 +44,7 @@ exports.login = (req, res) => {
 
                 res.status(200).json({
                     message: 'Login Successful',
+                    userId:userdata.user_id,
                     jwtoken: accessToken
                     });
                 }
@@ -68,7 +69,6 @@ exports.login = (req, res) => {
       username: req.body.Mobile_Number,
       password: req.body.password
     };
-    console.log(user)
     bcrypt.hash(user.password, 10).then((hash) => {
     let insertQuery = 'INSERT INTO ?? (??,??,??,??) VALUES (?,?,now(),now())';
     let query = mysql.format(insertQuery,["authentication","username","password","createdAt","updatedAt",user.username,hash]);
@@ -83,21 +83,24 @@ exports.login = (req, res) => {
               });
             return;
         }
-        console.log(res.insertId);
-
-        // rows added
-        console.log("row inserted")
+       
         //Add the entry in user_details table 
         let insertQuery = 'INSERT INTO ?? (??,??,??) VALUES (?,?,\'{}\')';
         let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",res.insertId,user.username,]);
         console.log(query)
         pool.query(query,(err, res) => {
             if(err) {
-                console.error(err);
+              console.error(err);
+              res.status(500).send({
+                  message:
+                    err.message || "Some error occurred while creating the User."
+                });
+              return;
             }
         });
-
+        res.status(200).json({
+          message: 'User registeration successful',
+          });
     });
    });
-    res.status(200).send("User registered");
   };

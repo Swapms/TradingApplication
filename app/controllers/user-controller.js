@@ -82,8 +82,8 @@ exports.create = (req, res) => {
 
   exports.updateHealthDetails = (req, res) => {
     
-    console.log(req.body)
-    health_details.user_id = 1;
+   // console.log(req.body)
+    health_details.user_id = req.body.user_id;
     health_details.gender = req.body.gender;
     health_details.location = req.body.city;
     health_details.dob = req.body.birthdate;

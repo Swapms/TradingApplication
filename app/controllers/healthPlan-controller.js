@@ -2,10 +2,8 @@ const mysql = require('mysql');
 const pool = require('../config/config.js');
 const healthRoute = require('../routes/health-route.js');
 const healthPlan= require('../models/HealthPlan.js');
-const { json } = require('body-parser');
-const { agefun, BMIfun } = require("./helpers/index");
-//const agefun = require('./helpers/index.js').getAge;
-//const BMIfun= require('./helpers/index.js').getBMI;
+//const { json } = require('body-parser');
+const { getAge, getBMI } = require("./helpers/index");
 
 // Create and Save a new user
 exports.getHealthPlans = (req, res) => {
@@ -101,14 +99,15 @@ exports.getHealthPlans = (req, res) => {
           
           console.log('The data from users table are: \n', rows);
           jsondata = JSON.parse(JSON.stringify(rows[0]))  
-          const age = agefun("'"+(jsondata.dob)+"'")
+          const age = getAge("'"+(jsondata.dob)+"'")
+          console.log(age);
           let height = jsondata.height;
-          const bmi = BMIfun(height,jsondata.weight)
+          const bmi = getBMI(height,jsondata.weight)
           let gender = jsondata.gender;
           let family_history =  jsondata.family_history;
           let exisiting_conditions =  jsondata.exisiting_conditions;
          
-          generatePlansForBloodTest(user_id,age,gender,exisiting_conditions,family_history)
+          generatePlansForBloodTest(user_id,age,bmi,gender,exisiting_conditions,family_history)
           
           generatePlansForDiagnostic(user_id,age,gender,exisiting_conditions,family_history)
           
@@ -126,7 +125,7 @@ exports.getHealthPlans = (req, res) => {
    * @param {*} exisiting_conditions 
    * @param {*} family_history 
    */
-  function generatePlansForBloodTest (user_id,age,gender,exisiting_conditions,family_history) {
+  function generatePlansForBloodTest (user_id,age,bmi,gender,exisiting_conditions,family_history) {
     let recomm_level = '',frequency = '',why_recomm = '';
     //condition for blood test PSA, get checkup_id from healthplan table
     if( gender === 'male' ) {
@@ -246,6 +245,26 @@ exports.getHealthPlans = (req, res) => {
        addPlan(user_id,recomm_level,frequency,why_recomm,'Diagnostic', 'Transvaginal ultrasound');
        recomm_level = ''
      }
+     //diagnostic 	Pap Smear
+     if(age > 21 && age < 66){
+      recomm_level= 1;
+      frequency = "frequency_diagnostic_PS_c1";
+      why_recomm = "recomm_diagnostic_PS_c1";
+     }
+     if(recomm_level != ''){
+      addPlan(user_id,recomm_level,frequency,why_recomm,'Diagnostic', 'Pap Smear');
+      recomm_level = ''
+    }
+     //diagnosticHPV DNA test
+     if(age > 30 && age < 66){
+      recomm_level= 0;
+      frequency = "frequency_diagnostic_HPVDNA_c1";
+      why_recomm = "recomm_diagnostic_HPVDNA_c1";
+     }
+     if(recomm_level != ''){
+      addPlan(user_id,recomm_level,frequency,why_recomm,'Diagnostic', 'HPV DNA');
+      recomm_level = ''
+    }
    }
   }
           

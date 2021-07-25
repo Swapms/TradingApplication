@@ -1,4 +1,5 @@
 module.exports = {
-    secretKey: "Shashangka Shekhar",
-    algorithm: 'HS256'
+    secretKey: "dummy",//change it
+    algorithm: 'HS256',
+    port : 8080
 };
