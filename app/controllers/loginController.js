@@ -86,7 +86,7 @@ exports.login = (req, res) => {
        
         //Add the entry in user_details table 
         let insertQuery = 'INSERT INTO ?? (??,??,??) VALUES (?,?,\'{}\')';
-        let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",res.insertId,user.username,]);
+        let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",resp.insertId,user.username,]);
         console.log(query)
         pool.query(query,(err, resp) => {
             if(err) {
@@ -99,7 +99,8 @@ exports.login = (req, res) => {
             }
         });
         res.status(200).json({
-          message: 'User registeration successful',
+          status:true,
+          message:"success"
           });
     });
    });
