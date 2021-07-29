@@ -3,7 +3,6 @@ const pool = require('../config/config.js')
 const health_details = require('../models/Health-Details.js');
 const user_details = require('../models/User.js');
 const healthPlanController = require('./healthPlan-controller.js');
-const { createTokens, validateToken } = require("./helpers/index");
 // Create and Save a new user
 exports.create = (req, res) => {
     // Validate request
@@ -53,37 +52,39 @@ exports.create = (req, res) => {
   
     user_details.user_id = req.body.user_id;
     user_details.name = req.body.name;
-    user_details.relation = req.body.relation;
     //user_details.phone_number = req.body.phone_number;
     user_details.whatsApp_number = req.body.whatsApp_number;
-    
-   // console.log(JSON.stringify(health_details.excercise))
-   //var user_attributes_Json = JSON.stringify(req.body);
+
    let updateQuery = 'UPDATE user_details'+
-   ' SET name = ?,relation=?,user_attributes = JSON_SET(user_attributes,"$.whatsApp_number",?)'+
+   ' SET name = ?,user_attributes = JSON_SET(user_attributes,"$.whatsApp_number",?)'+
    ' WHERE user_id=?';
    let query = mysql.format(updateQuery,[user_details.name,
-                            user_details.relation,user_details.whatsApp_number,user_details.user_id]);  
+                            user_details.whatsApp_number,user_details.user_id]);  
    console.log(query);
    pool.query(query,(err, res) => {
         if(err) {
             console.error(err);
             res.status(500).send({
-                message:
+                status:false,
+                messages:
                   err.message || "Some error occurred while updating the User."
               });
             return;
         }
-        // rows added
-        console.log("row UPDATED")
+     
    });
-    res.status(200).send("Member Added successfully");
+   res.status(200).json({
+    status:true,
+    message:"Member Added Successfully"
+    });
   };
 
   exports.updateHealthDetails = (req, res) => {
-    
-   // console.log(req.body)
+    console.log("in update")
+    console.log(req.body)
     health_details.user_id = req.body.user_id;
+    //add relation
+    //smoke
     health_details.gender = req.body.gender;
     health_details.location = req.body.city;
     health_details.dob = req.body.birthdate;
@@ -108,8 +109,9 @@ exports.create = (req, res) => {
         if(err) {
             console.error(err);
             res.status(500).send({
-                message:
-                  err.message || "Some error occurred while updating the User."
+              status:false,
+                messages:
+                  err.message || "Some error occurred while adding/updating the User details."
               });
             return;
         }
@@ -118,5 +120,8 @@ exports.create = (req, res) => {
         //call health plan algo
         healthPlanController.createHealthPlans(health_details.user_id);
    });
-    res.status(200).send("Data updated successfully");
+   res.status(200).json({
+    status:true,
+    message:"Data updated successfully"
+    });
   };

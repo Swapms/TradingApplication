@@ -75,13 +75,64 @@ exports.getHealthPlans = (req, res) => {
        //     finalResult.push({Recommended:result,Recommendedcount:recommendedcount,SelfAddedcount:selfAddedcount,SelfAdded:{test_name :'SelfAdded',testTypes:rows}})           
           //  finalResult.push({SelfAdded:tempResult});
           //  console.log(JSON.parse(JSON.stringify(finalResult)))
-            res.status(200).json(JSON.parse(JSON.stringify({Recommended:result,Recommendedcount:recommendedcount,SelfAddedcount:selfAddedcount,SelfAdded:tempResult})))
-          });
+          res.status(200).json({
+            data: JSON.parse(JSON.stringify({Recommended:result,Recommendedcount:recommendedcount,SelfAddedcount:selfAddedcount,SelfAdded:tempResult}))
+         });
+        });
         });
       });
     });
   };
 
+  exports.getHealthPlanbyId = (req, res) => {
+    // Validate request
+    const user_id = req.params.id; 
+   // const checkup_id;
+    if (!user_id) {
+      res.status(400).send({
+        message: "Content can not be empty!"
+      });
+      return;
+    }
+    let plan = '';
+    const fs = require('fs');
+    fs.readFile('../TradingApplication/app/files/healthplandetails.json', (err, data) => {
+      if (err) throw err;
+      try {
+         plan = JSON.parse(data);    
+       } catch (err) {
+        console.log("Error parsing JSON string:", err);
+      }
+    });
+     //get json keys from table
+    pool.getConnection((err, connection) => {
+      if(err) throw err;
+      console.log('connected as id ' + connection.threadId);
+      const selectQuery = 'SELECT recomm_level,'+
+      ' additional_fields->>"$.frequency" frequency,additional_fields->>"$.why_recomm" why_recomm'+
+      ' FROM `recommendedandcustomizedplan` WHERE `user_id` = ? AND `checkup_id` = ?';
+      
+      let query = mysql.format(selectQuery,[user_id,1]);
+      console.log(query);
+       connection.query(query, (err, rows) => {
+          connection.release(); // return the connection to pool
+          if(err) throw err;
+          if(rows.length > 0){
+            let frequency = rows[0].frequency;
+            let why_recomm = rows[0].why_recomm;
+            jsonData=JSON.parse(JSON.stringify({recomm_level:rows[0].recomm_level,frequency:plan[frequency],why_recomm:plan[why_recomm]}))
+          }else{
+            //no records found
+          }
+          res.status(200).json({
+            status: true,
+            messages:"success",
+            data: jsonData
+         });
+      });
+    });
+
+  };
   exports.createHealthPlans = (user_id) => {
   
     pool.getConnection((err, connection) => {

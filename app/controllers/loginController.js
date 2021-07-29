@@ -30,9 +30,11 @@ exports.login = (req, res) => {
             const dbPassword = results[0].password;
             bcrypt.compare(user.password, dbPassword).then((match) => {
                 if (!match) {
-                res
-                    .status(400)
-                    .json({ error: "Wrong Username and Password Combination!" });
+              
+                    res.status(400).json({
+                      status: false,
+                      messages:"Wrong Username and Password Combination!"
+                  });
                 } else {
                 userdata = JSON.parse(JSON.stringify(results[0]));  
                 const accessToken = createTokens(userdata);
@@ -41,16 +43,20 @@ exports.login = (req, res) => {
                     maxAge: 60 * 60 * 24 * 30 * 1000,
                     httpOnly: true,
                 });*/
-
+              
                 res.status(200).json({
-                    message: 'Login Successful',
-                    userId:userdata.user_id,
-                    jwtoken: accessToken
-                    });
+                    status: true,
+                    messages:"success",
+                    data: JSON.parse(JSON.stringify({user_id:userdata.user_id,accessToken:accessToken}))
+                });
                 }
             });
           } else {
-            res.status(400).json({ error: "User Doesn't Exist" });
+           // res.status(400).json({ error: "User Doesn't Exist" });
+           res.status(400).json({
+            status: false,
+            messages:"User Doesn't Exist"
+        });
           }
         }
       );
@@ -60,7 +66,8 @@ exports.login = (req, res) => {
     // Validate request
     if (!req.body.Mobile_Number) {
       res.status(400).send({
-        message: "Content can not be empty!"
+        status:false,
+        messages: "Content can not be empty!"
       });
       return;
     }
@@ -69,6 +76,7 @@ exports.login = (req, res) => {
       username: req.body.Mobile_Number,
       password: req.body.password
     };
+    let user_id = '';
     bcrypt.hash(user.password, 10).then((hash) => {
     let insertQuery = 'INSERT INTO ?? (??,??,??,??) VALUES (?,?,now(),now())';
     let query = mysql.format(insertQuery,["authentication","username","password","createdAt","updatedAt",user.username,hash]);
@@ -78,30 +86,34 @@ exports.login = (req, res) => {
         if(err) {
             console.error(err);
             res.status(500).send({
-                message:
+              status:false,
+                messages:
                   err.message || "Some error occurred while creating the User."
               });
             return;
         }
-       
+        user_id = resp.insertId;
         //Add the entry in user_details table 
         let insertQuery = 'INSERT INTO ?? (??,??,??) VALUES (?,?,\'{}\')';
-        let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",resp.insertId,user.username,]);
+        let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",user_id,user.username,]);
         console.log(query)
         pool.query(query,(err, resp) => {
             if(err) {
               console.error(err);
               res.status(500).send({
-                  message:
+                status:false,
+                  messages:
                     err.message || "Some error occurred while creating the User."
                 });
               return;
             }
         });
+        const accessToken = createTokens(user);
         res.status(200).json({
-          status:true,
-          message:"success"
-          });
+          status: true,
+          messages:"success",
+          data: JSON.parse(JSON.stringify({user_id:user_id,accessToken:accessToken}))
+      });
     });
    });
   };

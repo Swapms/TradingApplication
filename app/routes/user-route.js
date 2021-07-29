@@ -11,9 +11,9 @@
 
     router.post("/register", userLogin.register);
 
-    router.post("/update", user.updateHealthDetails);
+    router.post("/update",user.updateHealthDetails);
 
-    router.post("/addMember",validateToken,user.addMember);
+    router.post("/addMember",user.addMember);
     //router.get('/data', validateToken, user.findAll);
    
     app.use('/api/users', router);

@@ -57,6 +57,7 @@ const validateToken = (req, res, next) => {
                     };
                     console.log(errordata);
                     return res.status(401).json({
+                        status:false,
                         message: 'Unauthorized Access'
                     });
                 }
@@ -66,6 +67,7 @@ const validateToken = (req, res, next) => {
             });
     } else {
         return res.status(403).json({
+            status:false,
             message: 'Forbidden Access'
         });
     }
