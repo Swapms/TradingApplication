@@ -1,6 +1,6 @@
 const mysql = require('mysql');
 const pool = require('../config/config');
-const { createTokens, validateToken } = require("./helpers/index");
+const { createTokens } = require("./helpers/index");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 exports.login = (req, res) => {
@@ -16,7 +16,7 @@ exports.login = (req, res) => {
       username: req.body.Mobile_Number,
       password: req.body.password
     };
-    console.log(user)
+ //   console.log(user)
     pool.getConnection((err, connection) => {
         if(err) throw err;
     connection.query(
@@ -76,44 +76,65 @@ exports.login = (req, res) => {
       username: req.body.Mobile_Number,
       password: req.body.password
     };
-    let user_id = '';
-    bcrypt.hash(user.password, 10).then((hash) => {
-    let insertQuery = 'INSERT INTO ?? (??,??,??,??) VALUES (?,?,now(),now())';
-    let query = mysql.format(insertQuery,["authentication","username","password","createdAt","updatedAt",user.username,hash]);
-    console.log(query)
-    pool.query(query,(err, resp) => {
-       
-        if(err) {
-            console.error(err);
-            res.status(500).send({
-              status:false,
-                messages:
-                  err.message || "Some error occurred while creating the User."
-              });
-            return;
-        }
-        user_id = resp.insertId;
-        //Add the entry in user_details table 
-        let insertQuery = 'INSERT INTO ?? (??,??,??) VALUES (?,?,\'{}\')';
-        let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",user_id,user.username,]);
-        console.log(query)
-        pool.query(query,(err, resp) => {
-            if(err) {
-              console.error(err);
-              res.status(500).send({
-                status:false,
-                  messages:
-                    err.message || "Some error occurred while creating the User."
-                });
-              return;
-            }
+    //check if user already present
+    pool.getConnection((err, connection) => {
+      if(err) throw err;
+  connection.query(
+      'SELECT username FROM `authentication` WHERE `username` = ?',
+      [user.username],
+      function(err, results) {
+          connection.release(); // return the connection to pool
+          if(err) throw err;
+        console.log(results);
+        if (results.length > 0) {
+          res.status(400).json({
+            status: false,
+            messages:"Mobile number already Exist"
         });
-        const accessToken = createTokens(user);
-        res.status(200).json({
-          status: true,
-          messages:"success",
-          data: JSON.parse(JSON.stringify({user_id:user_id,accessToken:accessToken}))
-      });
-    });
-   });
+        } else {
+          let user_id = '';
+          bcrypt.hash(user.password, 10).then((hash) => {
+          let insertQuery = 'INSERT INTO ?? (??,??,??,??) VALUES (?,?,now(),now())';
+          let query = mysql.format(insertQuery,["authentication","username","password","createdAt","updatedAt",user.username,hash]);
+          console.log(query)
+          pool.query(query,(err, resp) => {
+             
+              if(err) {
+                  console.error(err);
+                  res.status(500).send({
+                    status:false,
+                      messages:
+                        err.message || "Some error occurred while creating the User."
+                    });
+                  return;
+              }
+              user_id = resp.insertId;
+              //Add the entry in user_details table 
+              let insertQuery = 'INSERT INTO ?? (??,??,??) VALUES (?,?,\'{}\')';
+              let query = mysql.format(insertQuery,["user_details","user_id","phone_Number","user_attributes",user_id,user.username,]);
+              console.log(query)
+              pool.query(query,(err, resp) => {
+                  if(err) {
+                    console.error(err);
+                    res.status(500).send({
+                      status:false,
+                        messages:
+                          err.message || "Some error occurred while creating the User."
+                      });
+                    return;
+                  }
+              });
+              const accessToken = createTokens(user);
+              res.status(200).json({
+                status: true,
+                messages:"success",
+                data: JSON.parse(JSON.stringify({user_id:user_id,accessToken:accessToken}))
+            });
+          });
+         });
+        }
+      }
+    );
+  });
+ 
   };

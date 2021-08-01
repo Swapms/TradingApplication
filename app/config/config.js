@@ -8,6 +8,6 @@ module.exports  = mysql.createPool({
  //host     : 'localhost',
   user     : 'root',
   password : 'password',
-  database : 'demo',
+  database : 'test',
   debug    :  false
 });

@@ -52,13 +52,15 @@ exports.create = (req, res) => {
   
     user_details.user_id = req.body.user_id;
     user_details.name = req.body.name;
+     //add relation
+     user_details.relation = req.body.relation;
     //user_details.phone_number = req.body.phone_number;
     user_details.whatsApp_number = req.body.whatsApp_number;
 
    let updateQuery = 'UPDATE user_details'+
-   ' SET name = ?,user_attributes = JSON_SET(user_attributes,"$.whatsApp_number",?)'+
+   ' SET name = ?,relation = ?,user_attributes = JSON_SET(user_attributes,"$.whatsApp_number",?)'+
    ' WHERE user_id=?';
-   let query = mysql.format(updateQuery,[user_details.name,
+   let query = mysql.format(updateQuery,[user_details.name,user_details.relation,
                             user_details.whatsApp_number,user_details.user_id]);  
    console.log(query);
    pool.query(query,(err, res) => {
@@ -80,18 +82,18 @@ exports.create = (req, res) => {
   };
 
   exports.updateHealthDetails = (req, res) => {
-    console.log("in update")
     console.log(req.body)
     health_details.user_id = req.body.user_id;
-    //add relation
     //smoke
+    health_details.smoke = req.body.smoke;
+    health_details.alcohol = req.body.alcohol;
     health_details.gender = req.body.gender;
     health_details.location = req.body.city;
     health_details.dob = req.body.birthdate;
     health_details.height = req.body.height;
     health_details.weight = req.body.weight;
     health_details.diet = req.body.diet;
-    health_details.excercise = req.body.exercise;
+    health_details.excercise = req.body.excercise;
     health_details.family_history = req.body.familyHistoryConditions;
     health_details.exisiting_conditions = req.body.diagnosedCondition;
     console.log(JSON.stringify(health_details.family_history))
@@ -99,13 +101,13 @@ exports.create = (req, res) => {
    //var user_attributes_Json = JSON.stringify(req.body);
    let updateQuery = 'UPDATE user_details'+
    ' SET user_attributes = JSON_SET(user_attributes,"$.location",?,"$.gender",?,"$.dob",?,'+
-   ' "$.height",?,"$.weight",?,"$.diet",?,"$.excercise",?,"$.family_history",?,"$.exisiting_conditions",?)'+
+   ' "$.height",?,"$.weight",?,"$.diet",?,"$.smoke",?,"$.alcohol",?,"$.excercise",?,"$.family_history",?,"$.exisiting_conditions",?)'+
    ' WHERE user_id=?';
    let query = mysql.format(updateQuery,[health_details.location,health_details.gender,health_details.dob
-                            ,health_details.height,health_details.weight,health_details.diet,health_details.excercise,
-                             JSON.stringify(health_details.family_history),JSON.stringify(health_details.exisiting_conditions),1]);  
+                            ,health_details.height,health_details.weight,health_details.diet,health_details.smoke,health_details.alcohol,health_details.excercise,
+                             JSON.stringify(health_details.family_history),JSON.stringify(health_details.exisiting_conditions),health_details.user_id]);  
    console.log(query);
-   pool.query(query,(err, res) => {
+   pool.query(query,(err, resp) => {
         if(err) {
             console.error(err);
             res.status(500).send({
@@ -119,9 +121,10 @@ exports.create = (req, res) => {
         console.log("User Details updated")
         //call health plan algo
         healthPlanController.createHealthPlans(health_details.user_id);
+        res.status(200).json({
+          status:true,
+          message:"Data updated successfully and plans generated"
+          });
    });
-   res.status(200).json({
-    status:true,
-    message:"Data updated successfully"
-    });
+   
   };
