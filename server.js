@@ -2,7 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
-global.config = require('./jwt');
+const config = require('./app/config/config');
+//const { db: { pool } } = config;
 var corsOptions = {
   origin :"http://localhost:3000"
 }
@@ -19,7 +20,7 @@ require("./app/routes/user-route")(app);
 require("./app/routes/health-route")(app);
 
 
-app.listen(8080, () => {
+app.listen(config.app.port, () => {
   console.log('Server is running at port 8080');
 });
 

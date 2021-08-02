@@ -1,5 +1,3 @@
-const { sign, verify } = require("jsonwebtoken");
-
 
 const getAge = (dateString) => {
   let today = new Date();
@@ -29,49 +27,4 @@ const getBMI = (height,weight) => {
 
 }
 
-const createTokens = (user) => {
-  const accessToken = sign(
-    { username: user.username, id: user.user_id },
-    global.config.secretKey,
-    {
-      algorithm : global.config.algorithm,
-      expiresIn: '7d'
-    });
-
-  return accessToken;
-};
-
-const validateToken = (req, res, next) => {
-  var token = req.headers['x-access-token'];
-    console.log(token);
-    if (token) {
-        verify(token, global.config.secretKey,
-            {
-                algorithm: global.config.algorithm
-
-            }, function (err, decoded) {
-                if (err) {
-                    let errordata = {
-                        message: err.message,
-                        expiredAt: err.expiredAt
-                    };
-                    console.log(errordata);
-                    return res.status(401).json({
-                        status:false,
-                        message: 'Unauthorized Access'
-                    });
-                }
-                req.decoded = decoded;
-                console.log(decoded);
-                next();
-            });
-    } else {
-        return res.status(403).json({
-            status:false,
-            message: 'Forbidden Access'
-        });
-    }
- 
-};
-
-module.exports = { getAge, getBMI,createTokens,validateToken };
+module.exports = { getAge, getBMI};
