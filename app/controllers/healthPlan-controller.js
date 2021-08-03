@@ -38,9 +38,9 @@ exports.getHealthPlans = (req, res) => {
       let querymain = mysql.format(selectQueryMain, [user_id]);
       connection.query(querymain, (err, rowsmain) => {
         connection.release(); // return the connection to pool
-        if(rowsmain.length>0){
+        if (rowsmain.length > 0) {
           jsondata = JSON.parse(JSON.stringify(rowsmain));
-          let startPtr = 0,endPtr = 0;
+          let startPtr = 0, endPtr = 0;
           jsondata.forEach(function (healthplan) {
             endPtr = endPtr + healthplan.count;
             for (let i = startPtr; i < endPtr; i++) {
@@ -51,9 +51,9 @@ exports.getHealthPlans = (req, res) => {
             startPtr = healthplan.count;
             testTypes = [];
           });
-            res.status(200).json({
-              data: JSON.parse(JSON.stringify({ Recommended: result}))
-            });
+          res.status(200).json({
+            data: JSON.parse(JSON.stringify({ Recommended: result }))
+          });
         }
       });
     });
@@ -65,7 +65,7 @@ exports.getHealthPlanbyId = (req, res) => {
   console.log(req.params.user_id);
   const user_id = req.params.user_id;
   const checkup_id = req.params.checkup_id;
-  
+
   if (!user_id) {
     res.status(400).send({
       message: "Content can not be empty!"
@@ -211,6 +211,25 @@ function generatePlansForBloodTest(user_id, age, bmi, smoke, alcohol, excercise,
     }
   }
 
+  //condition for blood test CA-125
+  if (gender == 'female') {
+    if (exisiting_conditions.includes("CA-125")) {
+      recomm_level = 2;
+      frequency = "frequency_blood_CA-125_c2";
+      why_recomm_arr.push("recomm_blood_CA-125_c2");
+    } else if (age > 30 && family_history.includes("Breast or ovarian cancer")) {
+      recomm_level = 2;
+      frequency = "frequency_blood_CA-125_c1";
+      why_recomm_arr.push("recomm_blood_CA-125_c1");
+    }
+  }
+
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'CA-125');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
+
   //condition for blood test CBC
   if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
     || exisiting_conditions.includes('Hypercholesterolemia')) {
@@ -260,77 +279,325 @@ function generatePlansForBloodTest(user_id, age, bmi, smoke, alcohol, excercise,
     recomm_level = ''
     why_recomm_arr = [];
   }
-   //condition for blood test Lipid Profie
-   if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
-   || exisiting_conditions.includes('Hypercholesterolemia') || exisiting_conditions.includes('Cardiovascular disease')) {
-   recomm_level = 1;
-   why_recomm_arr.push("recomm_blood_LipidProfie_c1");
- }
- if(family_history.includes('Cardiovascular disease')){
-  recomm_level = 1;
-  why_recomm_arr.push("recomm_blood_LipidProfie_c2");
- }
- if (bmi > 22) {
-   recomm_level = 1;
-   why_recomm_arr.push("recomm_blood_LipidProfie_c3");
- }
- if (excercise == 'Less than 30 minutes' || excercise == 'More than 30 minutes and less than 1.5 hour') {
-   recomm_level = 1;
-   why_recomm_arr.push("recomm_blood_LipidProfie_c4");
- }
- if (smoke > 0) {
-   recomm_level = 1;
-   why_recomm_arr.push("recomm_blood_LipidProfie_c5");
- }
- if (alcohol == 'yes') {
-   recomm_level = 1;
-   why_recomm_arr.push("recomm_blood_LipidProfie_c6");
- }
- if (age > 59) {
-   recomm_level = 1;
-   why_recomm_arr.push("recomm_blood_LipidProfie_c7");
- }
- if (recomm_level != '') {
-   frequency = "frequency_blood_LipidProfie_c1";
-   addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Lipid Profie');
-   recomm_level = '';
-   why_recomm_arr = [];
- } else {
-   //only when recomm level is blank then only the lower recomm level condition will be excecuted
-   if (age > 29 && age < 60) {
-     recomm_level = 0;
-     frequency = "frequency_blood_LipidProfie_c2";
-     why_recomm_arr.push("recomm_blood_LipidProfie_c8");
-   } else if (age > 18 && age < 30) {
-     recomm_level = 0;
-     frequency = "frequency_blood_LipidProfie_c3";
-     why_recomm_arr.push("recomm_blood_LipidProfie_c9");
-   }
- }
- if (recomm_level != '') {
-   addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Lipid Profie');
-   recomm_level = ''
-   why_recomm_arr = [];
- }
-
-  //condition for blood test CA-125
-  if (gender == 'female') {
-    if (exisiting_conditions.includes("CA-125")) {
-      recomm_level = 2;
-      frequency = "frequency_blood_CA-125_c2";
-      why_recomm_arr.push("recomm_blood_CA-125_c2");
-    } else if (age > 30 && family_history.includes("Breast or ovarian cancer")) {
-      recomm_level = 2;
-      frequency = "frequency_blood_CA-125_c1";
-      why_recomm_arr.push("recomm_blood_CA-125_c1");
+  //condition for blood test Lipid Profie
+  if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
+    || exisiting_conditions.includes('Hypercholesterolemia') || exisiting_conditions.includes('Cardiovascular disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LipidProfie_c1");
+  }
+  if (family_history.includes('Cardiovascular disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LipidProfie_c2");
+  }
+  if (bmi > 22) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LipidProfie_c3");
+  }
+  if (excercise == 'Less than 30 minutes' || excercise == 'More than 30 minutes and less than 1.5 hour') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LipidProfie_c4");
+  }
+  if (smoke > 0) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LipidProfie_c5");
+  }
+  if (alcohol == 'yes') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_alcohol_yes");
+  }
+  if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LipidProfie_c7");
+  }
+  if (recomm_level != '') {
+    frequency = "frequency_blood_LipidProfie_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Lipid Profie');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    //only when recomm level is blank then only the lower recomm level condition will be excecuted
+    if (age > 29 && age < 60) {
+      recomm_level = 0;
+      frequency = "frequency_blood_LipidProfie_c2";
+      why_recomm_arr.push("recomm_blood_LipidProfie_c8");
+    } else if (age > 18 && age < 30) {
+      recomm_level = 0;
+      frequency = "frequency_blood_LipidProfie_c3";
+      why_recomm_arr.push("recomm_blood_LipidProfie_c9");
     }
+  }
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Lipid Profie');
+    recomm_level = ''
+    why_recomm_arr = [];
+  }
+
+  //condition for blood test Sugar Profile (HbA1c)
+  if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Prediabetes')
+    || exisiting_conditions.includes('Gestational diabetes') || exisiting_conditions.includes('Hypertension')
+    || exisiting_conditions.includes('Hypercholesterolemia') || exisiting_conditions.includes('Polycystic ovarian syndrome')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_SugarProfie_c1");
+  }
+  if (family_history.includes('Diabetes')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_SugarProfie_c2");
+  }
+  if (bmi > 22) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_bmi_morethan_22");
+  }
+  if (excercise == 'Less than 30 minutes' || excercise == 'More than 30 minutes and less than 1.5 hour') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_excercise<30_or_morethan>30");
+  }
+
+  if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_age>59");
+  }
+  if (recomm_level != '') {
+    frequency = "frequency_blood_SugarProfie_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Sugar Profile (HbA1c)');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    //only when recomm level is blank then only the lower recomm level condition will be excecuted
+    if (age > 29 && age < 60) {
+      recomm_level = 0;
+      frequency = "frequency_blood_age>29_and_age<60";
+      why_recomm_arr.push("recomm_blood_age>29_and_age<60");
+    } else if (age > 18 && age < 30) {
+      recomm_level = 0;
+      frequency = "frequency_blood_age>29_and_age<30";
+      why_recomm_arr.push("recomm_blood_age>18_and_age<30");
+    }
+  }
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Sugar Profile (HbA1c)');
+    recomm_level = ''
+    why_recomm_arr = [];
+  }
+
+  //condition for blood test Thyroid profile
+
+  if (family_history.includes('Thyroid disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_ThyroidProfie_c1");
+  }
+  if (exisiting_conditions.includes('Diabetes')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_ThyroidProfie_c2");
+  }
+
+  if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_age>59");
+  }
+
+  //Need to confirm from Aditi
+  /*if(age > 18 && age <60 && gender == 'female'){
+    recomm_level = 1;
+    //why_recomm_arr.push("recomm_blood_ThyroidProfie_c3");
+    //frequency = "frequency_blood_ThyroidProfie_c2";
+    addPlan(user_id, 1,'frequency_blood_ThyroidProfie_c2', 'recomm_blood_ThyroidProfie_c3', 'Blood Test', 'Thyroid profile');
+  
+  }*/
+  if (recomm_level != '') {
+    frequency = "frequency_blood_ThyroidProfie_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Thyroid profile');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else if (age > 18 && age < 60) {
+    recomm_level = 0;
+    frequency = "frequency_blood_ThyroidProfie_c4";
+    why_recomm_arr.push("recomm_blood_ThyroidProfie_c4");
+
+  }
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Thyroid profile');
+    recomm_level = ''
+    why_recomm_arr = [];
+  }
+
+  //condition for blood test Liver profile 
+  if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
+    || exisiting_conditions.includes('Hypercholesterolemia')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LiverProfie_c1");
+  }
+  if (family_history.includes('Liver disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_LiverProfie_c2");
+  }
+  if (bmi > 22) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_bmi_morethan_22");
+  }
+  if (alcohol == 'yes') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_alcohol_yes");
+  }
+  if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_age>59");
   }
 
   if (recomm_level != '') {
-    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'CA-125');
+    frequency = "frequency_blood_LiverProfie_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Liver profile');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    //only when recomm level is blank then only the lower recomm level condition will be excecuted
+    if (age > 29 && age < 60) {
+      recomm_level = 0;
+      frequency = "frequency_blood_age>29_and_age<60";
+      why_recomm_arr.push("recomm_blood_age>29_and_age<60");
+    } else if (age > 18 && age < 30) {
+      recomm_level = 0;
+      frequency = "frequency_blood_age>29_and_age<30";
+      why_recomm_arr.push("recomm_blood_age>18_and_age<30");
+    }
+
+    if (recomm_level != '') {
+      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Sugar Profile (HbA1c)');
+      recomm_level = ''
+      why_recomm_arr = [];
+    }
+  }
+
+  //condition for blood test Kidney Function Test 
+  if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
+    || exisiting_conditions.includes('Hypercholesterolemia')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_Kidney_c1");
+  }
+  if (family_history.includes('Kidney disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_Kidney_c2");
+  }
+  if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_age>59");
+  }
+
+  if (recomm_level != '') {
+    frequency = "frequency_blood_Kidney_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Kidney Function Test');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    //only when recomm level is blank then only the lower recomm level condition will be excecuted
+    if (age > 29 && age < 60) {
+      recomm_level = 0;
+      frequency = "frequency_blood_age>29_and_age<60";
+      why_recomm_arr.push("recomm_blood_age>29_and_age<60");
+    } else if (age > 18 && age < 30) {
+      recomm_level = 0;
+      frequency = "frequency_blood_age>29_and_age<30";
+      why_recomm_arr.push("recomm_blood_age>18_and_age<30");
+    }
+
+    if (recomm_level != '') {
+      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Kidney Function Test');
+      recomm_level = ''
+      why_recomm_arr = [];
+    }
+  }
+  //condition for blood test Pancreas profile
+  if (alcohol == 'yes') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_alcohol_yes");
+  }
+  if (smoke > 0) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_smoke_>0");
+  }
+
+  if (recomm_level != '') {
+    frequency = "frequency_blood_Pancreas_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Pancreas profile');
     recomm_level = '';
     why_recomm_arr = [];
   }
+
+  //condition for blood test Iron Studies
+  if (age > 18 && age < 60 && gender == 'female') {
+    recomm_level = 0;
+    why_recomm_arr.push("recomm_blood_IronStudies_c1");
+  }
+  if (age > 59) {
+    recomm_level = 0;
+    why_recomm_arr.push("recomm_blood_age>59");
+  }
+  if (diet == 'Vegetarian') {
+    recomm_level = 0;
+    why_recomm_arr.push("recomm_blood_veg");
+  }
+
+  if (recomm_level != '') {
+    frequency = "frequency_blood_IronStudies_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Iron Studies');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
+
+  //condition for blood test Vitamin B12
+  if (diet == 'Vegetarian') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_veg");
+  }
+  if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_age>59");
+  }
+  if (recomm_level != '') {
+    frequency = "frequency_blood_VitaminB12_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Vitamin B12');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    if (age > 18 && age < 60) {
+      recomm_level = 0;
+      why_recomm_arr.push("recomm_blood_VitaminB12_c1");
+      frequency = "frequency_blood_VitaminB12_c2";
+      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Vitamin B12');
+      recomm_level = '';
+      why_recomm_arr = [];
+    }
+  }
+
+  //condition for blood test Vitamin D
+  if (exisiting_conditions.includes('Bone disorders') || exisiting_conditions.includes('Liver disease')
+    || exisiting_conditions.includes('Kidney disease') || exisiting_conditions.includes('Inflammatory bowel disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_VitaminD_c1");
+  }
+  if (bmi > 22) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_bmi_morethan_22");
+  }
+  if (recomm_level != '') {
+    frequency = "frequency_blood_VitaminD_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Vitamin D');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else if (age > 59) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_age>59");
+    addPlan(user_id, recomm_level, 'frequency_blood_VitaminD_c2', why_recomm_arr, 'Blood Test', 'Vitamin D');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else if (age > 18 && age < 60) {
+    recomm_level = 0;
+    why_recomm_arr.push("recomm_blood_VitaminD_c2");
+    frequency = "frequency_blood_VitaminD_c3";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Blood Test', 'Vitamin D');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
+
 
 }
 //pack_year pending
@@ -369,6 +636,7 @@ function generatePlansForDiagnostic(user_id, age, gender, pack_year, exisiting_c
       recomm_level = '';
       why_recomm_arr = [];
     }
+    //Transvaginal ultrasound
     if (age > 30 && family_history.includes("Breast or ovarian cancer")) {
       recomm_level = 2;
       frequency = "frequency_diagnostic_TU_c1";
@@ -402,35 +670,163 @@ function generatePlansForDiagnostic(user_id, age, gender, pack_year, exisiting_c
       recomm_level = '';
       why_recomm_arr = [];
     }
-    //diagnostic Low Dose CT Scan (LDCT)
-    if (age > 54 && age < 78 && pack_year > 29) {
-      recomm_level = 2;
-      frequency = "frequency_diagnostic_LDCT_c1";
-      why_recomm_arr.push("recomm_diagnostic_LDCT_c1");
-    }
-    if (recomm_level != '') {
-      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'Low Dose CT Scan');
-      recomm_level = '';
-      why_recomm_arr = [];
-    }
-    //diagnostic Colonoscopy
-    if (age > 39 && age < 76 && family_history.includes("colorectal cancer")) {
-      recomm_level = 2;
-      frequency = "frequency_diagnostic_colonoscopy_c2";
-      why_recomm_arr.push("recomm_diagnostic_colonoscopy_c2");
 
-    } else if (age > 49 && age < 76) {
-      recomm_level = 1;
-      frequency = "frequency_diagnostic_colonoscopy_c1";
-      why_recomm_arr.push("recomm_diagnostic_colonoscopy_c1");
-    }
-    if (recomm_level != '') {
-      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'Colonoscopy');
+  }
+  //diagnostic Low Dose CT Scan (LDCT)
+  if (age > 54 && age < 78 && pack_year > 29) {
+    recomm_level = 2;
+    frequency = "frequency_diagnostic_LDCT_c1";
+    why_recomm_arr.push("recomm_diagnostic_LDCT_c1");
+  }
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'Low Dose CT Scan');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
+  //diagnostic Colonoscopy
+  if (age > 39 && age < 76 && family_history.includes("colorectal cancer")) {
+    recomm_level = 2;
+    frequency = "frequency_diagnostic_colonoscopy_c2";
+    why_recomm_arr.push("recomm_diagnostic_colonoscopy_c2");
+
+  } else if (age > 49 && age < 76) {
+    recomm_level = 1;
+    frequency = "frequency_diagnostic_colonoscopy_c1";
+    why_recomm_arr.push("recomm_diagnostic_colonoscopy_c1");
+  }
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'Colonoscopy');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
+
+  //diagnostic Bone Density Testing
+  if (gender == 'female' && age > 64) {
+    recomm_level = 1;
+    frequency = "frequency_diagnostic_Bone_Density_Testing_c1";
+    why_recomm_arr.push("recomm_diagnostic_Bone_Density_Testing_c1");
+
+  } else if (gender == 'female' && age > 44) {
+    recomm_level = 0;
+    frequency = "frequency_diagnostic_Bone_Density_Testing_c2";
+    why_recomm_arr.push("recomm_diagnostic_Bone_Density_Testing_c2");
+  } else if (gender == 'male' && age > 69) {
+    recomm_level = 0;
+    frequency = "frequency_diagnostic_Bone_Density_Testing_c3";
+    why_recomm_arr.push("recomm_diagnostic_Bone_Density_Testing_c3");
+  }
+  if (recomm_level != '') {
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'Bone Density Testing');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
+
+  //diagnostic ECG
+  if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
+    || exisiting_conditions.includes('Hypercholesterolemia') || exisiting_conditions.includes('Cardiovascular disease') || exisiting_conditions.includes('Kidney disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_diagnostic_ECG_c1");
+  }
+  if (family_history.includes('Cardiovascular disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_diagnostic_ECG_c2");
+  }
+  if (bmi > 22) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_bmi>22");
+  }
+  if (excercise == 'Less than 30 minutes' || excercise == 'More than 30 minutes and less than 1.5 hour') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_diagnostic_ECG_c3");
+  }
+  if (smoke > 0) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_smoke>0");
+  }
+  if (alcohol == 'yes') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_alcohol_yes");
+  }
+  if (age > 54) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_age>54");
+  }
+
+  if (recomm_level != '') {
+    frequency = "frequency_diagnostic_ECG_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'ECG');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    //only when recomm level is blank then only the lower recomm level condition will be excecuted
+    if (age > 18 && age < 55) {
+      recomm_level = 0;
+      frequency = "frequency_diagnostic_ECG_c2";
+      why_recomm_arr.push("recomm_diagnostic_ECG_c4");
+      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'ECG');
       recomm_level = '';
       why_recomm_arr = [];
     }
   }
+  //diagnostic ECHO
+  if (exisiting_conditions.includes('Diabetes') || exisiting_conditions.includes('Hypertension')
+    || exisiting_conditions.includes('Hypercholesterolemia') || exisiting_conditions.includes('Cardiovascular disease') || exisiting_conditions.includes('Kidney disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_diagnostic_ECHO_c1");
+  }
+  if (family_history.includes('Cardiovascular disease')) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_diagnostic_ECHO_c2");
+  }
+  if (bmi > 22) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_blood_bmi>22");
+  }
+  if (excercise == 'Less than 30 minutes' || excercise == 'More than 30 minutes and less than 1.5 hour') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_diagnostic_ECHO_c3");
+  }
+  if (smoke > 0) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_smoke>0");
+  }
+  if (alcohol == 'yes') {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_alcohol_yes");
+  }
+  if (age > 54) {
+    recomm_level = 1;
+    why_recomm_arr.push("recomm_age>54");
+  }
+
+  if (recomm_level != '') {
+    frequency = "frequency_diagnostic_ECHO_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'ECHO');
+    recomm_level = '';
+    why_recomm_arr = [];
+  } else {
+    //only when recomm level is blank then only the lower recomm level condition will be excecuted
+    if (age > 18 && age < 55) {
+      recomm_level = 0;
+      frequency = "frequency_diagnostic_ECHO_c2";
+      why_recomm_arr.push("recomm_diagnostic_ECHO_c4");
+      addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'ECHO');
+      recomm_level = '';
+      why_recomm_arr = [];
+    }
+  }
+
+  //diagnostic Chest X-ray
+  if (age > 18) {
+    recomm_level = 0;
+    why_recomm_arr.push("recomm_diagnostic_ChestX-ray_c1");
+    frequency = "frequency_diagnostic_ChestX-ray_c1";
+    addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Diagnostic', 'Chest X-ray');
+    recomm_level = '';
+    why_recomm_arr = [];
+  }
 }
+
 
 
 /**
@@ -449,7 +845,7 @@ function generatePlansForDoctorCheckup(user_id, age, gender, exisiting_condition
     recomm_level = 2;
     frequency = "frequency_doctorcheckup_genetic_c1";
     why_recomm_arr.push("recomm_doctorcheckup_genetic_c1");
-   
+
   }
   if (recomm_level != '') {
     addPlan(user_id, recomm_level, frequency, why_recomm_arr, 'Doctor Checkup', 'Genetic counseling');
