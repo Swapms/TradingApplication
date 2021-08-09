@@ -1,5 +1,5 @@
-const mysql = require('mysql2');
-//const mysql = require('mysql2/promise');
+//const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const env = process.env.NODE_ENV; // 'dev' or 'test'
 
 /*module.exports  = mysql.createPool({
@@ -19,11 +19,11 @@ const config = {
   db: {
     pool :mysql.createPool({
       connectionLimit : 100, //important
-      host     : 'database-1.cgzohsjvm2s5.us-east-2.rds.amazonaws.com',
-     //host     : 'localhost',
+     // host     : 'database-1.cgzohsjvm2s5.us-east-2.rds.amazonaws.com',
+     host     : 'localhost',
       user     : 'root',
       password : 'password',
-      database : 'healthplantest',
+      database : 'demo',
       debug    :  false
     })
   }

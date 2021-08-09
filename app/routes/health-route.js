@@ -7,5 +7,7 @@ module.exports = app => {
 
   router.get("/getHealthPlanbyId/:user_id/:checkup_id", health.getHealthPlanbyId);
 
+ // router.post("/update",health.updateHealthDetails);
+
   app.use('/api/users', router);
 };

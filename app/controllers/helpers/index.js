@@ -13,9 +13,9 @@ const getAge = (dateString) => {
 
 const getBMI = (height,weight) => {
   let heightInCm ='';
-  if(height.includes(".")){
-    let feet = height.split(".")[0];
-    let inches = height.split(".")[1];
+  if(height.includes("'")){
+    let feet = height.split("'")[0];
+    let inches = height.split("'")[1];
     console.log("fee : "+feet +"inches :"+inches);
     heightInCm =(Number(inches) +(feet * 12))*2.54;
   }else{
@@ -24,7 +24,6 @@ const getBMI = (height,weight) => {
   }
   let BMI = Math.round((Number(weight) / heightInCm / heightInCm ) * 10000,2);
   return BMI;
-
 }
 
 module.exports = { getAge, getBMI};

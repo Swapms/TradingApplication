@@ -1,21 +1,21 @@
-const mysql = require('mysql');
+const { response } = require('express');
+const mysql = require('mysql2/promise');
 const config = require('../config/config.js');
 const { db: { pool } } = config;
 const health_details = require('../models/Health-Details.js');
 const healthPlanController = require('./healthPlan-controller.js');
 
-
-  exports.updateHealthDetails = (req, res) => {
+  exports.updateHealthDetails = async (req, res) => {
     console.log(req.body)
-    health_details.smoke = req.body.smoke;
-    health_details.alcohol = req.body.alcohol;
+    health_details.smoke = req.body.smoking;
+    health_details.alcohol = req.body.alcoholIntake;
     health_details.gender = req.body.gender;
     health_details.location = req.body.city;
     health_details.dob = req.body.birthdate;
     health_details.height = req.body.height;
     health_details.weight = req.body.weight;
     health_details.diet = req.body.diet;
-    health_details.excercise = req.body.excercise;
+    health_details.excercise = req.body.exercise;
     health_details.family_history = req.body.familyHistoryConditions;
     health_details.exisiting_conditions = req.body.diagnosedCondition;
     console.log(JSON.stringify(health_details.family_history))
@@ -29,25 +29,15 @@ const healthPlanController = require('./healthPlan-controller.js');
                             ,health_details.height,health_details.weight,health_details.diet,health_details.smoke,health_details.alcohol,health_details.excercise,
                              JSON.stringify(health_details.family_history),JSON.stringify(health_details.exisiting_conditions)]);  
    console.log(query);
-   pool.query(query,(err, resp) => {
-        if(err) {
-            console.error(err);
-            res.status(500).send({
-              status:false,
-                messages:
-                  err.message || "Some error occurred while adding the User details."
-              });
-            return;
-        }
-        // rows added
-        console.log("User Details updated")
-        //call health plan algo
-        healthPlanController.createHealthPlans(resp.insertId);
-        res.status(200).json({
-          status:true,
-          message:"Data inserted successfully and plans generated",
-          data: JSON.parse(JSON.stringify({user_id:resp.insertId}))
-          });
-   });
-   
+   data = await pool.query(query);
+   console.log(data[0].insertId);
+   var responseFromHealthPlan = await healthPlanController.createHealthPlans(data[0].insertId)
+   if(responseFromHealthPlan){
+    res.status(200).json({
+      status:true,
+      message:"Data inserted successfully and plans generated",
+      data:{user_id:data[0].insertId}
+      });
+      console.log('response sent')
+   }
   };
