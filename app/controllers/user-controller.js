@@ -28,9 +28,9 @@ const healthPlanController = require('./healthPlan-controller.js');
    let query = mysql.format(insertQuery,[health_details.location,health_details.gender,health_details.dob
                             ,health_details.height,health_details.weight,health_details.diet,health_details.smoke,health_details.alcohol,health_details.excercise,
                              JSON.stringify(health_details.family_history),JSON.stringify(health_details.exisiting_conditions)]);  
-   console.log(query);
+  // console.log(query);
    data = await pool.query(query);
-   console.log(data[0].insertId);
+  // console.log(data[0].insertId);
    var responseFromHealthPlan = await healthPlanController.createHealthPlans(data[0].insertId)
    if(responseFromHealthPlan){
     res.status(200).json({
@@ -38,6 +38,6 @@ const healthPlanController = require('./healthPlan-controller.js');
       message:"Data inserted successfully and plans generated",
       data:{user_id:data[0].insertId}
       });
-      console.log('response sent')
+    //  console.log('response sent')
    }
   };
